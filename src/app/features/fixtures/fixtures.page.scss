@@ -1,0 +1,66 @@
+.page-head {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+}
+
+.left {
+  min-width: 0;
+}
+
+.teams {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 800;
+}
+
+.vs {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.score {
+  font-weight: 900;
+}
+
+.pill.live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+

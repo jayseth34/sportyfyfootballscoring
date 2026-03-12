@@ -1,0 +1,100 @@
+.page-head {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+}
+
+.kpi-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.kpi {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.label {
+  color: var(--muted);
+}
+
+.section {
+  margin-top: 20px;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  text-decoration: none;
+  color: inherit;
+}
+
+.left {
+  min-width: 0;
+}
+
+.teams {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.team {
+  font-weight: 700;
+}
+
+.vs {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.score {
+  font-weight: 800;
+}
+
+.pill.live {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+@media (max-width: 860px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

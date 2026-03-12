@@ -1,0 +1,78 @@
+﻿@if (!team()) {
+  <div class="card">
+    <h1>Team not found</h1>
+    <a [routerLink]="['/t', tournamentId(), 'teams']" class="link">Back to teams</a>
+  </div>
+} @else {
+  <div class="head">
+    <div class="crest">{{ team()!.teamShortName }}</div>
+    <div>
+      <h1>{{ team()!.teamName }}</h1>
+      <div class="muted">{{ team()!.location }} • Owner {{ team()!.ownerName }}</div>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2>Team info</h2>
+    <div class="card">
+      <div class="kv">
+        <div class="k muted">Mobile</div>
+        <div class="v mono">{{ team()!.mobileNumber }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Players</div>
+        <div class="v">{{ team()!.playerCount }}/{{ team()!.playersPerTeam }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Wallet</div>
+        <div class="v">{{ team()!.teamWalletBalance }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Spent</div>
+        <div class="v">{{ team()!.totalAmountSpent }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Available</div>
+        <div class="v strong">{{ team()!.availableBalance }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Players</h2>
+
+    @if (!players().length) {
+      <div class="card">
+        <p class="muted">No players found (or API not reachable).</p>
+      </div>
+    } @else {
+      <div class="players">
+        @for (p of players(); track p.id) {
+          <div class="player card">
+            <div class="avatar" [style.background-image]="p.profileImageUrl ? 'url(' + p.profileImageUrl + ')' : 'none'">
+              @if (!p.profileImageUrl) {
+                <span class="initial">{{ p.name.slice(0, 1).toUpperCase() }}</span>
+              }
+            </div>
+            <div class="info">
+              <div class="row">
+                <div class="pname">{{ p.name }}</div>
+                <span class="pill">{{ p.role }}</span>
+              </div>
+              <div class="muted small">{{ p.village || 'Unknown village' }} • {{ p.gender || 'Unknown' }} • {{ p.age ?? 'NA' }}</div>
+              <div class="muted small">{{ p.isSold ? 'Sold' : 'Unsold' }} • Price {{ p.soldPrice }}</div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="section">
+    <h2>Fixtures</h2>
+    <div class="card">
+      <p class="muted">Team fixtures will be wired after we map fixtures by teamId (teamAId/teamBId).</p>
+      <a class="btn" [routerLink]="['/t', tournamentId(), 'fixtures']">Open fixtures</a>
+    </div>
+  </section>
+}

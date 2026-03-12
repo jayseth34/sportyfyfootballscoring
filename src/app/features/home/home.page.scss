@@ -1,0 +1,89 @@
+.home {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.hero {
+  padding: 36px 0 10px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: -0.03em;
+}
+
+.about {
+  margin-top: 16px;
+}
+
+.section {
+  margin-top: 18px;
+}
+
+.section-head {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tournament {
+  text-decoration: none;
+  color: inherit;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.name {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.enter {
+  margin-top: 10px;
+  font-weight: 900;
+}
+
+.meta {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.small {
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+}

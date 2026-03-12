@@ -1,0 +1,23 @@
+﻿<div class="page-head">
+  <h1>Teams</h1>
+  <p class="muted">Teams for this tournament (from API).</p>
+</div>
+
+<div class="grid">
+  @for (t of ordered(); track t.id) {
+    <a class="card team" [routerLink]="['/t', tournamentId(), 'teams', t.id]">
+      <div class="team-top">
+        <div class="crest">{{ t.teamShortName || 'T' }}</div>
+        <div class="team-meta">
+          <div class="name">{{ t.teamName }}</div>
+          <div class="muted">{{ t.location }} • Owner {{ t.ownerName }}</div>
+        </div>
+      </div>
+
+      <div class="team-bottom">
+        <span class="pill">{{ t.playerCount }}/{{ t.playersPerTeam }} players</span>
+        <span class="pill">Balance {{ t.availableBalance }}</span>
+      </div>
+    </a>
+  }
+</div>

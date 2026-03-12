@@ -1,0 +1,72 @@
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">SF</div>
+      <div class="brand-text">
+        <div class="title">{{ tournament()?.name }}</div>
+        <div class="subtitle">
+          {{ tournament()?.location }} • {{ tournament()?.sportType }}
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-status">
+      @if (isAdmin()) {
+        <span class="pill ok">Admin access</span>
+        <button type="button" class="mini-btn" (click)="revokeAdminAccess()">Switch to view-only</button>
+      } @else {
+        <span class="pill">View-only</span>
+        <button type="button" class="mini-btn" (click)="openScoring()">Unlock admin</button>
+      }
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <nav class="nav">
+      <a [routerLink]="['/t', tournamentId(), 'dashboard']" routerLinkActive="active">Dashboard</a>
+      <a [routerLink]="['/t', tournamentId(), 'teams']" routerLinkActive="active">Teams</a>
+      <a [routerLink]="['/t', tournamentId(), 'fixtures']" routerLinkActive="active">Fixtures</a>
+
+      <div class="nav-sep"></div>
+      <button type="button" class="nav-btn" (click)="openScoring()">Scoring Console</button>
+
+      <div class="nav-sep"></div>
+      <a routerLink="/" (click)="leaveTournament()">Change tournament</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
+
+@if (adminModalOpen()) {
+  <div class="modal-backdrop" (click)="closeAdminModal()" aria-hidden="true"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Scoring access">
+    <div class="modal-card card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Scoring access</div>
+          <div class="muted small">Enter your admin mobile number for this tournament.</div>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeAdminModal()" aria-label="Close">✕</button>
+      </div>
+
+      <label class="field">
+        <div class="muted">Mobile number</div>
+        <input type="tel" inputmode="numeric" placeholder="e.g. 9920420192" [ngModel]="mobile()" (ngModelChange)="mobile.set($event)" />
+      </label>
+
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <div class="actions">
+        <button type="button" class="btn" (click)="closeAdminModal()">Cancel</button>
+        <button type="button" class="btn primary" (click)="submitAdminMobile()">Continue</button>
+      </div>
+
+      <p class="muted small">If your number is not in the tournament admin list, you will stay in view-only mode.</p>
+    </div>
+  </div>
+}

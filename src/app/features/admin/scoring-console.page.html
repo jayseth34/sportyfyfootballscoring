@@ -1,0 +1,141 @@
+﻿<div class="page-head">
+  <div>
+    <h1>Scoring Console</h1>
+    <p class="muted">Admin-only list of fixtures for scoring updates.</p>
+  </div>
+
+  <button type="button" class="btn primary" (click)="openAdd()">Add fixture</button>
+</div>
+
+<div class="list">
+  @for (f of ordered(); track f.id) {
+    <a class="row" [routerLink]="['/t', tournamentId(), 'matches', f.id]">
+      <div class="teams">
+        <div class="team">{{ f.teamAName }}</div>
+        <div class="vs">vs</div>
+        <div class="team">{{ f.teamBName }}</div>
+      </div>
+      <div class="meta">
+        <span class="pill" [class.live]="f.isLive">{{ statusLabel(f) }}</span>
+        <span class="muted">{{ f.matchName }} • {{ f.date }} • {{ f.timeAt || 'TBD' }}</span>
+        @if (!f.isLive) {
+          <button type="button" class="mini-btn" (click)="$event.preventDefault(); $event.stopPropagation(); toggleLive(f, true)">
+            Start
+          </button>
+        } @else {
+          <button type="button" class="mini-btn" (click)="$event.preventDefault(); $event.stopPropagation(); toggleLive(f, false)">
+            Stop
+          </button>
+        }
+      </div>
+    </a>
+  }
+</div>
+
+@if (addOpen()) {
+  <div class="modal-backdrop" (click)="closeAdd()" aria-hidden="true"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Add fixture">
+    <div class="modal-card card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">Add fixture</div>
+          <div class="muted small">Creates a fixture for the selected tournament.</div>
+        </div>
+        <button type="button" class="icon-btn" (click)="closeAdd()" aria-label="Close">✕</button>
+      </div>
+
+      <div class="form">
+        <label>
+          <div class="muted">Team A</div>
+          <select [ngModel]="form().teamAId" (ngModelChange)="patchForm({ teamAId: $event })">
+            @for (t of teams(); track t.id) {
+              <option [value]="t.id">{{ t.teamName }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <div class="muted">Team B</div>
+          <select [ngModel]="form().teamBId" (ngModelChange)="patchForm({ teamBId: $event })">
+            @for (t of teams(); track t.id) {
+              <option [value]="t.id">{{ t.teamName }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <div class="muted">Venue</div>
+          <input type="text" [ngModel]="form().venue" (ngModelChange)="patchForm({ venue: $event })" />
+        </label>
+
+        <div class="row2">
+          <label>
+            <div class="muted">Date</div>
+            <input
+              type="date"
+              [ngModel]="form().date"
+              (ngModelChange)="patchForm({ date: $event })"
+            />
+          </label>
+          <label>
+            <div class="muted">Time</div>
+            <input
+              type="time"
+              [ngModel]="form().timeAt"
+              (ngModelChange)="patchForm({ timeAt: $event })"
+            />
+          </label>
+        </div>
+
+        <label>
+          <div class="muted">Match name</div>
+          <input
+            type="text"
+            [ngModel]="form().matchName"
+            (ngModelChange)="patchForm({ matchName: $event })"
+          />
+        </label>
+
+        <label>
+          <div class="muted">Status</div>
+          <input
+            type="text"
+            placeholder="optional"
+            [ngModel]="form().status"
+            (ngModelChange)="patchForm({ status: $event })"
+          />
+        </label>
+
+        <label>
+          <div class="muted">Result</div>
+          <input
+            type="text"
+            placeholder="optional"
+            [ngModel]="form().result"
+            (ngModelChange)="patchForm({ result: $event })"
+          />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" [ngModel]="form().isLive" (ngModelChange)="patchForm({ isLive: $event })" />
+          <span class="muted">Mark as live</span>
+        </label>
+      </div>
+
+      @if (error()) {
+        <div class="error">{{ error() }}</div>
+      }
+
+      <div class="actions">
+        <button type="button" class="btn" (click)="closeAdd()" [disabled]="saving()">Cancel</button>
+        <button type="button" class="btn primary" (click)="saveFixture()" [disabled]="saving()">
+          @if (saving()) {
+            Saving...
+          } @else {
+            Create fixture
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

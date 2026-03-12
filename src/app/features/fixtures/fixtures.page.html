@@ -1,0 +1,23 @@
+﻿<div class="page-head">
+  <h1>Fixtures</h1>
+  <p class="muted">All fixtures in the tournament.</p>
+</div>
+
+<div class="list">
+  @for (f of ordered(); track f.id) {
+    <a class="row" [routerLink]="['/t', tournamentId(), 'matches', f.id]">
+      <div class="left">
+        <div class="teams">
+          <div class="team">{{ f.teamAName }}</div>
+          <div class="vs">vs</div>
+          <div class="team">{{ f.teamBName }}</div>
+        </div>
+        <div class="muted sub">{{ f.matchName }} • {{ f.venue }} • {{ f.date }} • {{ f.timeAt || 'TBD' }}</div>
+      </div>
+
+      <div class="right">
+        <span class="pill" [class.live]="f.isLive">{{ statusLabel(f) }}</span>
+      </div>
+    </a>
+  }
+</div>

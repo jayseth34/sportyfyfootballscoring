@@ -1,0 +1,47 @@
+﻿<div class="home">
+  <header class="hero">
+    <div class="badge">Sportyfy Tournaments</div>
+    <h1>Tournament hub (UI first)</h1>
+    <p class="muted">
+      Pick a tournament to enter. After selection, you will see fixtures and scoring access (admin via mobile).
+    </p>
+  </header>
+
+  <section class="card about">
+    <h2>About</h2>
+    <p class="muted">
+      This app starts with a clean UI and incremental API integration. Tournaments and fixtures are live from the backend;
+      teams, players, and scoring will be wired next.
+    </p>
+    <ul class="muted">
+      <li>Tournaments list (API)</li>
+      <li>Fixtures list + fixture detail (API)</li>
+      <li>Admin scoring access (mobile check vs tournament admins)</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Select a football tournament</h2>
+    </div>
+
+    <div class="grid">
+      @if (!ordered().length) {
+        <div class="card muted">No football tournaments available (or API not reachable).</div>
+      } @else {
+        @for (t of ordered(); track t.id) {
+          <a class="card tournament" [routerLink]="['/t', t.id]">
+            <div class="top">
+              <div class="name">{{ t.name }}</div>
+              <div class="pill">{{ t.sportType }}</div>
+            </div>
+            <div class="meta muted">{{ t.location }} • {{ t.numberOfTeams }} teams • {{ t.playersPerTeam }} players/team</div>
+            <div class="meta muted">{{ t.startDateIso | date: 'd MMM y' }} to {{ t.endDateIso | date: 'd MMM y' }}</div>
+            <div class="meta muted">Owner: {{ t.ownerName }} • Admins: {{ t.admins.length }}</div>
+            <div class="enter">Enter →</div>
+          </a>
+        }
+      }
+    </div>
+  </section>
+</div>

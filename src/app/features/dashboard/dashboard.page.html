@@ -1,0 +1,72 @@
+﻿<div class="page">
+  <div class="page-head">
+    <h1>Dashboard</h1>
+    <p class="muted">Tournament overview, fixtures, and admin scoring access.</p>
+  </div>
+
+  <section class="kpi-grid">
+    <div class="card">
+      <div class="kpi">{{ kpis().teams }}</div>
+      <div class="label">Teams</div>
+    </div>
+    <div class="card">
+      <div class="kpi">{{ kpis().matches }}</div>
+      <div class="label">Fixtures</div>
+    </div>
+    <div class="card">
+      <div class="kpi">{{ kpis().live }}</div>
+      <div class="label">Live now</div>
+    </div>
+  </section>
+
+  @if (live().length) {
+    <section class="section">
+      <div class="section-head">
+        <h2>Live</h2>
+      </div>
+
+      <div class="list">
+        @for (f of live(); track f.id) {
+          <a class="row" [routerLink]="['/t', tournamentId(), 'matches', f.id]">
+            <div class="left">
+              <div class="teams">
+                <div class="team">{{ f.teamAName }}</div>
+                <div class="vs">vs</div>
+                <div class="team">{{ f.teamBName }}</div>
+              </div>
+              <div class="muted sub">{{ fixtureSubline(f) }}</div>
+            </div>
+            <div class="meta">
+              <span class="pill live">LIVE</span>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Fixtures</h2>
+      <a class="link" [routerLink]="['/t', tournamentId(), 'fixtures']">View all</a>
+    </div>
+
+    <div class="list">
+      @for (f of upcoming().slice(0, 6); track f.id) {
+        <a class="row" [routerLink]="['/t', tournamentId(), 'matches', f.id]">
+          <div class="left">
+            <div class="teams">
+              <div class="team">{{ f.teamAName }}</div>
+              <div class="vs">vs</div>
+              <div class="team">{{ f.teamBName }}</div>
+            </div>
+            <div class="muted sub">{{ fixtureSubline(f) }}</div>
+          </div>
+          <div class="meta">
+            <span class="pill">{{ f.result }}</span>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+</div>

@@ -1,0 +1,151 @@
+﻿@if (!fixture()) {
+  <div class="card">
+    <h1>Fixture not found</h1>
+    <a [routerLink]="['/t', tournamentId(), 'fixtures']" class="link">Back to fixtures</a>
+  </div>
+} @else {
+  <div class="head card">
+    <div class="teams">
+      <div class="team">
+        <div class="name">{{ fixture()!.teamAName }}</div>
+        <div class="muted">Team A</div>
+      </div>
+
+      <div class="center">
+        <div class="pill" [class.live]="fixture()!.isLive">{{ statusLabel() }}</div>
+        <div class="score mono">{{ score().teamA }} - {{ score().teamB }}</div>
+        <div class="muted small">
+          {{ fixture()!.matchName }}
+          @if (matchState()) {
+            • {{ matchState()!.currentMinute }}'
+          }
+        </div>
+      </div>
+
+      <div class="team right">
+        <div class="name">{{ fixture()!.teamBName }}</div>
+        <div class="muted">Team B</div>
+      </div>
+    </div>
+
+    <div class="meta muted">
+      {{ fixture()!.venue }} • {{ fixture()!.date }} • {{ fixture()!.timeAt || 'TBD' }}
+    </div>
+
+    <div class="result">{{ fixture()!.result }}</div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Match details</h2>
+      @if (requestError()) {
+        <div class="error">{{ requestError() }}</div>
+      }
+      <div class="kv">
+        <div class="k muted">Fixture ID</div>
+        <div class="v mono">{{ fixture()!.id }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Venue</div>
+        <div class="v">{{ fixture()!.venue }}</div>
+      </div>
+      <div class="kv">
+        <div class="k muted">Date/Time</div>
+        <div class="v">{{ fixture()!.date }} {{ fixture()!.timeAt }}</div>
+      </div>
+      @if (matchState()) {
+        <div class="kv">
+          <div class="k muted">Minute</div>
+          <div class="v">{{ matchState()!.currentMinute }}' @if (matchState()!.extraTime) { +{{ matchState()!.extraTime }} }</div>
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <h2>Scoring</h2>
+
+      @if (!isAdmin()) {
+        <p class="muted">View-only mode. Use “Scoring Console” and enter an admin mobile number to update scoring.</p>
+      } @else {
+        <div class="actions">
+          @if (!fixture()!.isLive) {
+            <button type="button" class="btn primary" (click)="toggleLive(true)">Start match</button>
+          } @else {
+            <button type="button" class="btn" (click)="toggleLive(false)">Stop match</button>
+          }
+        </div>
+
+        @if (!fixture()!.isLive) {
+          <p class="muted">Start the match to enable scoring controls.</p>
+        } @else {
+          <div class="form">
+            <label>
+              <div class="muted">Team</div>
+              <select [ngModel]="selectedTeamId()" (ngModelChange)="onTeamChange($event)">
+                <option [ngValue]="fixture()!.teamAId">{{ fixture()!.teamAName }}</option>
+                <option [ngValue]="fixture()!.teamBId">{{ fixture()!.teamBName }}</option>
+              </select>
+            </label>
+
+            <label>
+              <div class="muted">Player</div>
+              <select [ngModel]="selectedPlayerId()" (ngModelChange)="selectedPlayerId.set($event)">
+                @for (p of playerOptions(); track p.id) {
+                  <option [ngValue]="p.id">{{ p.name }} ({{ p.role }})</option>
+                }
+              </select>
+            </label>
+
+            <div class="row2">
+              <label>
+                <div class="muted">Minute</div>
+                <input type="number" min="0" max="130" [ngModel]="minute()" (ngModelChange)="minute.set($event)" />
+              </label>
+              <label>
+                <div class="muted">Event</div>
+                <select [ngModel]="kind()" (ngModelChange)="kind.set($event)">
+                  <option value="goal">Goal</option>
+                  <option value="yellow">Yellow card</option>
+                  <option value="red">Red card</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="button" class="btn primary" (click)="addEvent()">Add</button>
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  <section class="card timeline">
+    <h2>Timeline</h2>
+
+    @if (!events().length) {
+      <p class="muted">No events yet.</p>
+    } @else {
+      <div class="events">
+        @for (ev of events(); track ev.id) {
+          <div class="event">
+            <div class="minute mono">{{ ev.minute }}'@if (ev.extraTime) { +{{ ev.extraTime }} }</div>
+            <div class="detail">
+              @if (ev.eventType === 'goal') {
+                <div class="strong">Goal • {{ ev.teamName || teamName(ev.teamId) }}</div>
+                <div class="muted">
+                  {{ ev.playerName }}
+                  @if (ev.assistPlayerName) {
+                    • Assist {{ ev.assistPlayerName }}
+                  }
+                </div>
+              } @else {
+                <div class="strong">Card • {{ ev.teamName || teamName(ev.teamId) }}</div>
+                <div class="muted">{{ ev.playerName }} • {{ (ev.cardType || ev.eventType).toUpperCase() }}</div>
+              }
+            </div>
+            <div class="mini-score mono">{{ ev.teamAScore }} - {{ ev.teamBScore }}</div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
