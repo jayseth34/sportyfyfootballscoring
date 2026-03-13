@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map } from 'rxjs';
+import { backendBaseUrl } from '../config/backend-endpoints';
 import { Tournament } from '../models/tournament';
 
 type ApiResponse<T> = {
@@ -26,7 +27,7 @@ type TournamentDto = {
 
 @Injectable({ providedIn: 'root' })
 export class TournamentApiService {
-  private readonly baseUrl = 'https://be.sportyfy.in';
+  private readonly baseUrl = backendBaseUrl();
 
   constructor(private readonly http: HttpClient) {}
 
@@ -55,4 +56,3 @@ export class TournamentApiService {
       );
   }
 }
-

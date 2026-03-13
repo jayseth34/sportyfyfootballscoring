@@ -1,4 +1,5 @@
 import { Injectable, NgZone, signal } from '@angular/core';
+import { backendHubUrl } from '../config/backend-endpoints';
 import { FootballLiveUpdate } from '../models/football-live-update';
 
 import * as signalR from '@microsoft/signalr';
@@ -12,7 +13,7 @@ export class FootballSignalRService {
   readonly connected = signal(false);
   readonly lastUpdate = signal<FootballLiveUpdate | null>(null);
 
-  private readonly hubUrl = 'https://be.sportyfy.in/scoreHub';
+  private readonly hubUrl = backendHubUrl('/scoreHub');
 
   constructor(private readonly zone: NgZone) {}
 

@@ -1,0 +1,15 @@
+{
+  "/api": {
+    "target": "https://be.sportyfy.in",
+    "secure": true,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/scoreHub": {
+    "target": "https://be.sportyfy.in",
+    "secure": true,
+    "changeOrigin": true,
+    "ws": true,
+    "logLevel": "debug"
+  }
+}

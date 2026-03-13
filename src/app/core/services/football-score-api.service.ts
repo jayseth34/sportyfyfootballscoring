@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map } from 'rxjs';
+import { backendBaseUrl } from '../config/backend-endpoints';
 import { FootballMatchEventLog } from '../models/football-match-event-log';
 import { FootballMatchState } from '../models/football-match-state';
 import { FootballLiveUpdate } from '../models/football-live-update';
@@ -14,7 +15,7 @@ type ApiResponse<T> = {
 
 @Injectable({ providedIn: 'root' })
 export class FootballScoreApiService {
-  private readonly baseUrl = 'https://be.sportyfy.in';
+  private readonly baseUrl = backendBaseUrl();
 
   constructor(private readonly http: HttpClient) {}
 
