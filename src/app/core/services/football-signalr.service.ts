@@ -1,7 +1,6 @@
 import { Injectable, NgZone, signal } from '@angular/core';
 import { FootballLiveUpdate } from '../models/football-live-update';
 
-// NOTE: Requires `@microsoft/signalr` dependency.
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({ providedIn: 'root' })
@@ -23,21 +22,7 @@ export class FootballSignalRService {
     await this.disconnect();
     this.currentMatchId = matchId;
 
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(this.hubUrl)
-      .withAutomaticReconnect()
-      .build();
-
-    connection.on('ReceiveFootballUpdate', (dto: FootballLiveUpdate) => {
-      // Ensure Angular change detection sees updates from SignalR.
-      this.zone.run(() => {
-        this.lastUpdate.set(dto);
-      });
-    });
-
-    await connection.start();
-    await connection.invoke('JoinMatchGroup', matchId);
-
+    const connection = await this.startWithFallback(matchId);
     this.connection = connection;
     this.zone.run(() => this.connected.set(true));
   }
@@ -57,6 +42,55 @@ export class FootballSignalRService {
     } catch {
       // ignore
     }
+  }
+
+  private async startWithFallback(matchId: number): Promise<signalR.HubConnection> {
+    const attempts: Array<signalR.IHttpConnectionOptions | undefined> = [
+      undefined,
+      {
+        transport: signalR.HttpTransportType.LongPolling,
+        withCredentials: false
+      }
+    ];
+
+    let lastError: unknown;
+
+    for (const options of attempts) {
+      const connection = this.createConnection(options);
+      try {
+        await connection.start();
+        await connection.invoke('JoinMatchGroup', matchId);
+        return connection;
+      } catch (error) {
+        lastError = error;
+        try {
+          await connection.stop();
+        } catch {
+          // ignore cleanup failures
+        }
+      }
+    }
+
+    throw lastError;
+  }
+
+  private createConnection(options?: signalR.IHttpConnectionOptions): signalR.HubConnection {
+    const builder = new signalR.HubConnectionBuilder();
+    if (options) {
+      builder.withUrl(this.hubUrl, options);
+    } else {
+      builder.withUrl(this.hubUrl);
+    }
+
+    const connection = builder.withAutomaticReconnect().build();
+
+    connection.on('ReceiveFootballUpdate', (dto: FootballLiveUpdate) => {
+      this.zone.run(() => {
+        this.lastUpdate.set(dto);
+      });
+    });
+
+    return connection;
   }
 
 }
