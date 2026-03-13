@@ -12,6 +12,7 @@ export class FootballSignalRService {
 
   readonly connected = signal(false);
   readonly lastUpdate = signal<FootballLiveUpdate | null>(null);
+  readonly connectionError = signal<string | null>(null);
 
   private readonly hubUrl = backendHubUrl('/scoreHub');
 
@@ -27,13 +28,19 @@ export class FootballSignalRService {
 
     await this.disconnect();
     this.currentMatchId = matchId;
+    this.zone.run(() => this.connectionError.set(null));
 
-    this.startPromise = this.startWebSocketConnection(matchId);
+    this.startPromise = this.startConnection(matchId);
 
     try {
       const connection = await this.startPromise;
       this.connection = connection;
       this.zone.run(() => this.connected.set(true));
+    } catch (error) {
+      this.zone.run(() => {
+        this.connected.set(false);
+        this.connectionError.set(this.toMessage(error));
+      });
     } finally {
       this.startPromise = null;
     }
@@ -45,7 +52,10 @@ export class FootballSignalRService {
     this.connection = null;
     this.startPromise = null;
     this.currentMatchId = null;
-    this.zone.run(() => this.connected.set(false));
+    this.zone.run(() => {
+      this.connected.set(false);
+      this.connectionError.set(null);
+    });
     if (!c) return;
     try {
       if (matchId !== null) {
@@ -57,10 +67,9 @@ export class FootballSignalRService {
     }
   }
 
-  private async startWebSocketConnection(matchId: number): Promise<signalR.HubConnection> {
+  private async startConnection(matchId: number): Promise<signalR.HubConnection> {
     const connection = this.createConnection({
-      transport: signalR.HttpTransportType.WebSockets,
-      skipNegotiation: true,
+      transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents | signalR.HttpTransportType.LongPolling,
       withCredentials: false
     });
 
@@ -92,8 +101,18 @@ export class FootballSignalRService {
       }
     });
 
+    connection.onreconnecting((error) => {
+      this.zone.run(() => {
+        this.connected.set(false);
+        this.connectionError.set(this.toMessage(error));
+      });
+    });
+
     connection.onreconnected(async () => {
-      this.zone.run(() => this.connected.set(true));
+      this.zone.run(() => {
+        this.connected.set(true);
+        this.connectionError.set(null);
+      });
       if (this.currentMatchId !== null) {
         try {
           await connection.invoke('JoinMatchGroup', this.currentMatchId);
@@ -104,6 +123,11 @@ export class FootballSignalRService {
     });
 
     return connection;
+  }
+
+  private toMessage(error: unknown): string {
+    if (error instanceof Error && error.message.trim()) return error.message;
+    return 'Live updates are unavailable right now.';
   }
 
 }

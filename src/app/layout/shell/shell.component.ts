@@ -26,6 +26,7 @@ export class ShellComponent {
     const t = this.tournament();
     return t ? this.adminAccess.hasAccess(t) : false;
   });
+  readonly adminAccessLabel = computed(() => (this.isAdmin() ? 'Admin mode' : ''));
 
   readonly adminModalOpen = signal(false);
   readonly mobile = signal('');
@@ -70,6 +71,10 @@ export class ShellComponent {
       return;
     }
 
+    this.openAdminModal();
+  }
+
+  openAdminAccess(): void {
     this.openAdminModal();
   }
 

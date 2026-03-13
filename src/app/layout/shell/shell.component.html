@@ -12,11 +12,10 @@
 
     <div class="admin-status">
       @if (isAdmin()) {
-        <span class="pill ok">Admin access</span>
+        <span class="pill ok">{{ adminAccessLabel() }}</span>
         <button type="button" class="mini-btn" (click)="revokeAdminAccess()">Switch to view-only</button>
       } @else {
-        <span class="pill">View-only</span>
-        <button type="button" class="mini-btn" (click)="openScoring()">Unlock admin</button>
+        <button type="button" class="mini-btn" (click)="openAdminAccess()">Unlock admin</button>
       }
     </div>
   </header>

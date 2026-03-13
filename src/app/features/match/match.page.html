@@ -33,6 +33,14 @@
     </div>
 
     <div class="result">{{ fixture()!.result }}</div>
+    <div class="muted small">
+      Live updates:
+      @if (liveConnected()) {
+        Connected
+      } @else {
+        Disconnected
+      }
+    </div>
   </div>
 
   <div class="grid">
@@ -40,6 +48,9 @@
       <h2>Match details</h2>
       @if (requestError()) {
         <div class="error">{{ requestError() }}</div>
+      }
+      @if (liveConnectionError()) {
+        <div class="error">{{ liveConnectionError() }}</div>
       }
       <div class="kv">
         <div class="k muted">Fixture ID</div>

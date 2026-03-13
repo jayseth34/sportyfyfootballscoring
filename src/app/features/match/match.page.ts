@@ -134,6 +134,8 @@ export class MatchPageComponent {
   });
 
   readonly lastLiveUpdate = this.live.lastUpdate;
+  readonly liveConnected = this.live.connected;
+  readonly liveConnectionError = this.live.connectionError;
   readonly events = this.matchEvents.asReadonly();
 
   readonly teamAPlayers = computed(() => {
