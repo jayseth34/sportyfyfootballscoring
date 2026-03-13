@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -42,6 +42,7 @@ export class MatchPageComponent {
   readonly matchEvents = signal<FootballMatchEventLog[]>([]);
   readonly loading = signal(false);
   readonly requestError = signal<string | null>(null);
+  private readonly activeMatchId = signal<number | null>(null);
 
   constructor() {
     void this.store.ensureFixturesLoaded(this.tournamentId());
@@ -49,11 +50,31 @@ export class MatchPageComponent {
     effect(() => {
       const f = this.fixture();
       if (!f) return;
-      void this.store.ensurePlayersLoaded(this.tournamentId(), f.teamAId);
-      void this.store.ensurePlayersLoaded(this.tournamentId(), f.teamBId);
-      if (!this.selectedTeamId()) this.setSelectedTeam(f.teamAId);
-      void this.live.connect(f.id);
-      void this.loadMatchData(f.id);
+      if (this.activeMatchId() === f.id) return;
+
+      this.activeMatchId.set(f.id);
+      this.matchState.set(this.buildFallbackState(f));
+      this.matchEvents.set([]);
+      this.requestError.set(null);
+
+      untracked(() => {
+        void this.store.ensurePlayersLoaded(this.tournamentId(), f.teamAId);
+        void this.store.ensurePlayersLoaded(this.tournamentId(), f.teamBId);
+        this.setSelectedTeam(f.teamAId);
+        void this.live.connect(f.id);
+        void this.loadMatchData(f.id);
+      });
+    });
+
+    effect(() => {
+      const f = this.fixture();
+      if (!f) return;
+      const selectedTeamId = this.selectedTeamId();
+      if (selectedTeamId === f.teamAId || selectedTeamId === f.teamBId) return;
+
+      untracked(() => {
+        this.setSelectedTeam(f.teamAId);
+      });
     });
 
     effect(() => {
@@ -62,7 +83,19 @@ export class MatchPageComponent {
       if (!update || !f || update.matchId !== f.id) return;
 
       this.matchState.update((current) => {
-        if (!current) return current;
+        if (!current) {
+          return {
+            ...this.buildFallbackState(f),
+            teamAScore: update.teamAScore,
+            teamBScore: update.teamBScore,
+            currentMinute: update.currentMinute,
+            extraTime: update.extraTime,
+            remainingSeconds: update.remainingSeconds,
+            isLive: !update.isMatchOver,
+            isMatchOver: update.isMatchOver,
+            lastEventType: update.eventType
+          };
+        }
         return {
           ...current,
           teamAScore: update.teamAScore,
@@ -70,19 +103,17 @@ export class MatchPageComponent {
           currentMinute: update.currentMinute,
           extraTime: update.extraTime,
           remainingSeconds: update.remainingSeconds,
-          isLive: !update.isMatchOver && current.isLive,
+          isLive: update.eventType.toLowerCase() === 'clock' ? true : !update.isMatchOver && current.isLive,
           isMatchOver: update.isMatchOver,
           lastEventType: update.eventType
         };
       });
 
       if (update.eventType.toLowerCase() !== 'clock') {
-        void this.loadEvents(update.matchId);
+        this.upsertLiveEvent(update);
       }
 
-      if (update.isMatchOver) {
-        this.store.setFixtureLive(this.tournamentId(), update.matchId, false);
-      }
+      this.store.setFixtureLive(this.tournamentId(), update.matchId, !update.isMatchOver);
     });
 
     this.destroyRef.onDestroy(() => {
@@ -149,7 +180,12 @@ export class MatchPageComponent {
 
   private setSelectedTeam(teamId: number): void {
     this.selectedTeamId.set(Number(teamId));
-    const players = this.playerOptions();
+    const f = this.fixture();
+    if (!f) {
+      this.selectedPlayerId.set(0);
+      return;
+    }
+    const players = Number(teamId) === f.teamAId ? this.teamAPlayers() : this.teamBPlayers();
     this.selectedPlayerId.set(players[0]?.id ?? 0);
   }
 
@@ -294,7 +330,6 @@ export class MatchPageComponent {
 
     try {
       await firstValueFrom(this.scoreApi.updateFootball(dto));
-      await this.loadMatchData(fixture.id);
     } catch {
       // keep current UI state; backend remains source of truth
     }
@@ -306,18 +341,24 @@ export class MatchPageComponent {
 
   private async loadState(matchId: number): Promise<void> {
     this.loading.set(true);
-    this.requestError.set(null);
     try {
       const state = await firstValueFrom(this.scoreApi.getMatchState(matchId));
       this.matchState.set(state);
       this.store.setFixtureLive(this.tournamentId(), matchId, state.isLive);
+      this.requestError.set(null);
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 404) {
+      // Initial state is optional until the first backend score update/start event.
+      if (
+        (error instanceof HttpErrorResponse && (error.status === 404 || error.status === 400 || error.status === 204)) ||
+        !this.fixture()?.isLive
+      ) {
         this.requestError.set(null);
-        this.matchState.set(null);
+        const fixture = this.fixture();
+        this.matchState.set(fixture ? this.buildFallbackState(fixture) : null);
       } else {
-        this.requestError.set('Failed to load match state.');
-        this.matchState.set(null);
+        this.requestError.set('Live state is unavailable right now.');
+        const fixture = this.fixture();
+        this.matchState.set(fixture ? this.buildFallbackState(fixture) : null);
       }
     } finally {
       this.loading.set(false);
@@ -336,5 +377,58 @@ export class MatchPageComponent {
     } catch {
       this.matchEvents.set([]);
     }
+  }
+
+  private buildFallbackState(fixture: NonNullable<ReturnType<typeof this.fixture>>): FootballMatchState {
+    return {
+      matchId: fixture.id,
+      tournamentId: this.tournamentId(),
+      teamAId: fixture.teamAId,
+      teamAName: fixture.teamAName,
+      teamBId: fixture.teamBId,
+      teamBName: fixture.teamBName,
+      teamAScore: 0,
+      teamBScore: 0,
+      isLive: fixture.isLive,
+      isMatchOver: false,
+      currentMinute: 0,
+      extraTime: 0,
+      remainingSeconds: 0,
+      lastEventType: undefined
+    };
+  }
+
+  private upsertLiveEvent(update: FootballLiveUpdate): void {
+    if (update.eventType.toLowerCase() !== 'goal' && update.eventType.toLowerCase() !== 'card') {
+      return;
+    }
+
+    const event: FootballMatchEventLog = {
+      id: `${update.matchId}-${update.eventType}-${update.teamId}-${update.playerId}-${update.currentMinute}-${update.remainingSeconds}-${update.teamAScore}-${update.teamBScore}`,
+      matchId: update.matchId,
+      minute: update.currentMinute,
+      extraTime: update.extraTime,
+      eventType: update.eventType.toLowerCase(),
+      teamId: update.teamId,
+      teamName: update.teamName,
+      playerId: update.playerId,
+      playerName: update.playerName,
+      assistPlayerId: update.assistPlayerId,
+      assistPlayerName: update.assistPlayerName,
+      cardType: update.cardType ?? null,
+      teamAScore: update.teamAScore,
+      teamBScore: update.teamBScore,
+      createdAt: new Date().toISOString(),
+      isMatchOver: update.isMatchOver
+    };
+
+    this.matchEvents.update((current) => {
+      const exists = current.some((item) => item.id === event.id);
+      if (exists) return current;
+      return [...current, event].sort((a, b) => {
+        if (a.minute !== b.minute) return a.minute - b.minute;
+        return (a.extraTime ?? 0) - (b.extraTime ?? 0);
+      });
+    });
   }
 }

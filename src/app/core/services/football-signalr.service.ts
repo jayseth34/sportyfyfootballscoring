@@ -7,6 +7,7 @@ import * as signalR from '@microsoft/signalr';
 export class FootballSignalRService {
   private connection: signalR.HubConnection | null = null;
   private currentMatchId: number | null = null;
+  private startPromise: Promise<signalR.HubConnection> | null = null;
 
   readonly connected = signal(false);
   readonly lastUpdate = signal<FootballLiveUpdate | null>(null);
@@ -18,19 +19,30 @@ export class FootballSignalRService {
   async connect(matchId: number): Promise<void> {
     if (!Number.isFinite(matchId) || matchId <= 0) return;
     if (this.connection && this.currentMatchId === matchId) return;
+    if (this.startPromise && this.currentMatchId === matchId) {
+      await this.startPromise;
+      return;
+    }
 
     await this.disconnect();
     this.currentMatchId = matchId;
 
-    const connection = await this.startWithFallback(matchId);
-    this.connection = connection;
-    this.zone.run(() => this.connected.set(true));
+    this.startPromise = this.startWebSocketConnection(matchId);
+
+    try {
+      const connection = await this.startPromise;
+      this.connection = connection;
+      this.zone.run(() => this.connected.set(true));
+    } finally {
+      this.startPromise = null;
+    }
   }
 
   async disconnect(): Promise<void> {
     const c = this.connection;
     const matchId = this.currentMatchId;
     this.connection = null;
+    this.startPromise = null;
     this.currentMatchId = null;
     this.zone.run(() => this.connected.set(false));
     if (!c) return;
@@ -44,34 +56,16 @@ export class FootballSignalRService {
     }
   }
 
-  private async startWithFallback(matchId: number): Promise<signalR.HubConnection> {
-    const attempts: Array<signalR.IHttpConnectionOptions | undefined> = [
-      undefined,
-      {
-        transport: signalR.HttpTransportType.LongPolling,
-        withCredentials: false
-      }
-    ];
+  private async startWebSocketConnection(matchId: number): Promise<signalR.HubConnection> {
+    const connection = this.createConnection({
+      transport: signalR.HttpTransportType.WebSockets,
+      skipNegotiation: true,
+      withCredentials: false
+    });
 
-    let lastError: unknown;
-
-    for (const options of attempts) {
-      const connection = this.createConnection(options);
-      try {
-        await connection.start();
-        await connection.invoke('JoinMatchGroup', matchId);
-        return connection;
-      } catch (error) {
-        lastError = error;
-        try {
-          await connection.stop();
-        } catch {
-          // ignore cleanup failures
-        }
-      }
-    }
-
-    throw lastError;
+    await connection.start();
+    await connection.invoke('JoinMatchGroup', matchId);
+    return connection;
   }
 
   private createConnection(options?: signalR.IHttpConnectionOptions): signalR.HubConnection {
@@ -88,6 +82,24 @@ export class FootballSignalRService {
       this.zone.run(() => {
         this.lastUpdate.set(dto);
       });
+    });
+
+    connection.onclose(() => {
+      this.zone.run(() => this.connected.set(false));
+      if (this.connection === connection) {
+        this.connection = null;
+      }
+    });
+
+    connection.onreconnected(async () => {
+      this.zone.run(() => this.connected.set(true));
+      if (this.currentMatchId !== null) {
+        try {
+          await connection.invoke('JoinMatchGroup', this.currentMatchId);
+        } catch {
+          // ignore
+        }
+      }
     });
 
     return connection;
